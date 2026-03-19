@@ -43,25 +43,40 @@ class ClientController extends Controller
 
     //guardar un cliente nuevo.
     public function store(Request $request)
-        {
-            $validated = $request->validate([
-                'name' => 'required|string',
-                'username' => 'required|string|unique:clients',
-                'password_acc' => 'required|string',
-                'screens' => 'required|integer',
-                'platform' => 'required|string',
-                'months' => 'required|integer',
-                'income' => 'required|integer', // <-- Agregamos esto
-            ]);
+    {
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'username' => 'required|string|unique:clients',
+            'password_acc' => 'required|string',
+            'screens' => 'required|integer',
+            'platform' => 'required|string',
+            'months' => 'required|integer',
+            'income' => 'required|integer', // <-- Agregamos esto
+        ]);
 
-            $client = new Client($validated);
-            
-            $client->payment_date = now();
-            $client->due_date = now()->addMonths($request->input('months'));
-            $client->income = $request->input('income'); // <-- Guardamos el primer pago
-            
-            $client->save();
+        $client = new Client($validated);
+        
+        $client->payment_date = now();
+        $client->due_date = now()->addMonths($request->input('months'));
+        $client->income = $request->input('income'); // <-- Guardamos el primer pago
+        
+        $client->save();
 
-            return response()->json($client, 201);
-        }
+        return response()->json($client, 201);
+    }
+
+    // Actualizar cliente
+    public function update(Request $request, $id)
+    {
+        $client = Client::findOrFail($id);
+        $client->update($request->all());
+        return response()->json($client);
+    }
+
+    // Eliminar cliente
+    public function destroy($id)
+    {
+        Client::destroy($id);
+        return response()->json(['message' => 'Eliminado']);
+    }
 }
