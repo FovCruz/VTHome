@@ -80,4 +80,58 @@ class ConfigController extends Controller
 
         return response()->json(['message' => 'La base de datos ha sido vaciada por completo']);
     }
+
+    //calculador para graficas en el dashboard
+    public function getDashboardStats(Request $request) {
+        $month = $request->query('month', date('n'));
+        $year = date('Y');
+
+        // 1. Obtener pagos del mes seleccionado con sus productos
+        $payments = \App\Models\Payment::with('product', 'client')
+                    ->whereMonth('payment_date', $month)
+                    ->whereYear('payment_date', $year)
+                    ->get();
+
+        // 2. Calcular Totales
+        $totalCash = $payments->sum('amount');
+        $realProfit = $payments->reduce(function ($carry, $payment) {
+            $cost = $payment->product ? $payment->product->cost : 0;
+            return $carry + ($payment->amount - $cost);
+        }, 0);
+
+        // 3. Stock Crítico (Solo productos con stock <= 5)
+        $lowStock = \App\Models\Product::where('stock', '<=', 5)
+                    ->select('name', 'stock')
+                    ->get();
+
+        // 4. Datos para Gráfico de Líneas (Ventas diarias)
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $lineData = [];
+        for ($i = 1; $i <= $daysInMonth; $i++) {
+            $dayTotal = $payments->filter(fn($p) => date('j', strtotime($p->payment_date)) == $i)->sum('amount');
+            $lineData[] = ['day' => $i, 'total' => $dayTotal];
+        }
+
+        // 5. Histórico 6 Meses
+        $barData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $monthTotal = \App\Models\Payment::whereMonth('payment_date', $date->month)
+                        ->whereYear('payment_date', $date->year)
+                        ->sum('amount');
+            $barData[] = ['name' => $date->format('M'), 'total' => $monthTotal];
+        }
+
+        return response()->json([
+            'totalCash' => $totalCash,
+            'realProfit' => $realProfit,
+            'lowStock' => $lowStock,
+            'lineData' => $lineData,
+            'barData' => $barData,
+            'pieData' => $payments->groupBy('product.name')->map(fn($group, $key) => [
+                'name' => $key ?: 'Otros',
+                'value' => $group->count()
+            ])->values()
+        ]);
+    }
 }
