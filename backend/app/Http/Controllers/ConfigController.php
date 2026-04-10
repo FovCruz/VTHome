@@ -82,7 +82,7 @@ class ConfigController extends Controller
     }
 
     //calculador para graficas en el dashboard
-    public function getDashboardStats(Request $request) {
+ /*    public function getDashboardStats(Request $request) {
         $month = $request->query('month', date('n'));
         $year = date('Y');
 
@@ -133,5 +133,5 @@ class ConfigController extends Controller
                 'value' => $group->count()
             ])->values()
         ]);
-    }
+    } */
 }

@@ -1,81 +1,91 @@
 <?php
 
-namespace App\Http\Controllers; 
+namespace App\Http\Controllers;
+
 use App\Models\Client;
 use App\Models\Payment;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB; // IMPORTANTE: Para que no de Error 500
 
 class DashboardController extends Controller
 {
     public function getStats(Request $request)
     {
         try {
-            // Capturamos el mes del request o usamos el actual
             $month = $request->query('month', Carbon::now()->month);
             $year = Carbon::now()->year;
-
-            // Definimos el rango del mes seleccionado
             $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
             $endDate = $startDate->copy()->endOfMonth();
 
-            // 1. Ingresos del mes seleccionado
-            $income = (int) Payment::whereBetween('payment_date', [$startDate, $endDate])->sum('amount');
+            // 1. Obtener pagos con relación al producto
+            // Asegúrate que en tu modelo Payment exista: public function product() { return $this->belongsTo(Product::class); }
+            $payments = Payment::with('product')
+                ->whereBetween('payment_date', [$startDate, $endDate])
+                ->get();
 
-            // 2. Ingresos del mes anterior para la tendencia
-            $lastMonthStart = $startDate->copy()->subMonth();
-            $lastMonthEnd = $lastMonthStart->copy()->endOfMonth();
-            $prevIncome = (int) Payment::whereBetween('payment_date', [$lastMonthStart, $lastMonthEnd])->sum('amount');
-            
-            $trend = 'equal';
-            if ($income > $prevIncome) $trend = 'up';
-            elseif ($income < $prevIncome) $trend = 'down';
+            $totalCash = (int) $payments->sum('amount');
 
-            // 3. Clientes Activos y Vencidos (Estado Actual)
-            $activeCount = Client::where('due_date', '>=', Carbon::now())->count();
-            $expiredCount = Client::where('due_date', '<', Carbon::now())->count();
+            // 2. Ingreso Real (Venta - Costo)
+            $realProfit = $payments->reduce(function ($carry, $payment) {
+                $cost = ($payment->product) ? $payment->product->cost : 0;
+                return $carry + ($payment->amount - $cost);
+            }, 0);
 
-            // 4. Clientes que vencen en 3 días o menos (Alertas)
-            $urgentes = Client::whereBetween('due_date', [Carbon::now(), Carbon::now()->addDays(3)])
-                              ->orderBy('due_date', 'asc')
-                              ->get();
+            // 3. STOCK BAJO: Aquí está la conversación real
+            // Comparamos stock actual contra el min_stock de la tabla productos
+            $lowStock = Product::whereColumn('stock', '<=', 'min_stock')
+                ->select('name', 'stock', 'min_stock')
+                ->get();
 
-            // 5. Datos para el gráfico (Días completos del mes)
+            // 4. Gráfico de Líneas (Ventas Diarias)
             $daysInMonth = $startDate->daysInMonth;
-            $salesData = Payment::whereBetween('payment_date', [$startDate, $endDate])
-                ->select(DB::raw('DATE(payment_date) as date'), DB::raw('SUM(amount) as total'))
-                ->groupBy('date')
-                ->get()
-                ->pluck('total', 'date'); // Convertimos a [ '2026-03-22' => 5000 ]
+            $salesByDate = $payments->groupBy(function($p) {
+                return Carbon::parse($p->payment_date)->format('Y-m-d');
+            })->map->sum('amount');
 
-            $dailySales = [];
-
+            $lineData = [];
             for ($i = 1; $i <= $daysInMonth; $i++) {
-                $currentDate = $startDate->copy()->addDays($i - 1)->format('Y-m-d');
-                $label = $startDate->copy()->addDays($i - 1)->format('d/m');
-                
-                $dailySales[] = [
-                    'date' => $label,
-                    'total' => $salesData->get($currentDate, 0) // Si no hay venta, ponemos 0
+                $dateStr = $startDate->copy()->addDays($i - 1)->format('Y-m-d');
+                $lineData[] = [
+                    'day' => $i,
+                    'total' => $salesByDate->get($dateStr, 0)
                 ];
             }
 
             return response()->json([
-                'income' => $income,
-                'trend' => $trend,
-                'clients' => ['active' => $activeCount, 'expired' => $expiredCount],
-                'urgentes' => $urgentes,
-                'dailySales' => $dailySales,
-                'inventory' => 0 
+                'realProfit' => (int)$realProfit,
+                'totalCash' => $totalCash,
+                'lowStock' => $lowStock,
+                'lineData' => $lineData,
+                'pieData' => $payments->groupBy('product.name')->map(fn($g, $key) => [
+                    'name' => $key ?: 'Varios',
+                    'value' => $g->count()
+                ])->values(),
+                'barData' => $this->getSixMonthHistory()
             ]);
 
         } catch (\Exception $e) {
-            // Esto nos dirá el error real en la consola de red del navegador
             return response()->json([
-                'error' => 'Error interno en el servidor',
-                'details' => $e->getMessage()
+                'error' => 'Error en Dashboard',
+                'message' => $e->getMessage() // Esto te dirá qué falta si vuelve a dar 500
             ], 500);
         }
+    }
+
+    private function getSixMonthHistory() {
+        $data = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $total = Payment::whereMonth('payment_date', $date->month)
+                ->whereYear('payment_date', $date->year)
+                ->sum('amount');
+            $data[] = [
+                'name' => $date->translatedFormat('M'),
+                'total' => (int)$total
+            ];
+        }
+        return $data;
     }
 }
