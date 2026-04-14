@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
+            // AGREGAMOS ESTA LÍNEA PARA QUE EL DASHBOARD SEPA QUÉ PRODUCTO SE VENDIÓ
+            $table->foreignId('product_id')->nullable()->constrained()->onDelete('set null'); 
             $table->integer('amount');
             $table->integer('months');
             $table->date('payment_date');

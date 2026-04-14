@@ -9,19 +9,22 @@ class Payment extends Model
 {
     protected $fillable = [
         'client_id', 
+        'product_id', // <--- AGREGA ESTO (Faltaba en tu código)
         'amount', 
         'months', 
         'payment_date'
     ];
 
-    // ESTA FUNCIÓN ES VITAL: Es la que usa el with('client')
-    public function client(): BelongsTo
-    {
+    // Esto obliga a Laravel a tratar el campo como fecha de Carbon
+    protected $casts = [
+        'payment_date' => 'datetime',
+    ];
+
+    public function client(): BelongsTo {
         return $this->belongsTo(Client::class);
     }
 
-    public function product(): BelongsTo
-    {
+    public function product(): BelongsTo {
         return $this->belongsTo(Product::class);
     }
 }

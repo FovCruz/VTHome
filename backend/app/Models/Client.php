@@ -37,4 +37,9 @@ class Client extends Model
     {
         return $this->hasMany(Payment::class);
     }
+        public function product()
+    {
+        // Un cliente pertenece a un producto (el servicio que contrató)
+        return $this->belongsTo(Product::class);
+    }
 }

@@ -7,55 +7,61 @@ use App\Models\Payment;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB; // IMPORTANTE: Para que no de Error 500
 
 class DashboardController extends Controller
 {
     public function getStats(Request $request)
     {
         try {
-            $month = $request->query('month', Carbon::now()->month);
-            $year = Carbon::now()->year;
-            $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
-            $endDate = $startDate->copy()->endOfMonth();
+            // 0. Capturamos mes y año de forma segura.
+            $month = (int) $request->query('month', Carbon::now()->month);
+            $year = 2026; 
 
-            // 1. Obtener pagos con relación al producto
-            // Asegúrate que en tu modelo Payment exista: public function product() { return $this->belongsTo(Product::class); }
+            $startOfMonth = Carbon::create($year, $month, 1)->startOfMonth();
+            $endOfMonth = $startOfMonth->copy()->endOfMonth();
+
+            // 1. Buscamos los pagos del mes
             $payments = Payment::with('product')
-                ->whereBetween('payment_date', [$startDate, $endDate])
+                ->whereBetween('payment_date', [
+                    $startOfMonth->format('Y-m-d 00:00:00'),
+                    $endOfMonth->format('Y-m-d 23:59:59')
+                ])
                 ->get();
 
             $totalCash = (int) $payments->sum('amount');
 
-            // 2. Ingreso Real (Venta - Costo)
+            // 2. Ingreso Real
             $realProfit = $payments->reduce(function ($carry, $payment) {
                 $cost = ($payment->product) ? $payment->product->cost : 0;
                 return $carry + ($payment->amount - $cost);
             }, 0);
 
-            // 3. STOCK BAJO: Aquí está la conversación real
-            // Comparamos stock actual contra el min_stock de la tabla productos
+            // 3. Stock Bajo
             $lowStock = Product::whereColumn('stock', '<=', 'min_stock')
                 ->select('name', 'stock', 'min_stock')
                 ->get();
 
-            // 4. Gráfico de Líneas (Ventas Diarias)
-            $daysInMonth = $startDate->daysInMonth;
-            $salesByDate = $payments->groupBy(function($p) {
-                return Carbon::parse($p->payment_date)->format('Y-m-d');
-            })->map->sum('amount');
 
+            // En DashboardController.php, busca la parte del gráfico de líneas y cámbiala por esta:
+
+            $salesByDay = $payments->groupBy(function($p) {
+                // Usamos parse directo y forzamos el formato día para evitar fallos de zona horaria
+                return (int) Carbon::parse($p->payment_date)->format('j'); 
+            })->map(fn($group) => $group->sum('amount'));
+
+            $daysInMonth = $startOfMonth->daysInMonth;
             $lineData = [];
+
             for ($i = 1; $i <= $daysInMonth; $i++) {
-                $dateStr = $startDate->copy()->addDays($i - 1)->format('Y-m-d');
                 $lineData[] = [
                     'day' => $i,
-                    'total' => $salesByDate->get($dateStr, 0)
+                    'total' => (int) ($salesByDay[$i] ?? 0) // Acceso directo al número del día
                 ];
             }
 
+
             return response()->json([
-                'realProfit' => (int)$realProfit,
+                'realProfit' => $realProfit,
                 'totalCash' => $totalCash,
                 'lowStock' => $lowStock,
                 'lineData' => $lineData,
@@ -69,7 +75,8 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error en Dashboard',
-                'message' => $e->getMessage() // Esto te dirá qué falta si vuelve a dar 500
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
             ], 500);
         }
     }
@@ -78,9 +85,12 @@ class DashboardController extends Controller
         $data = [];
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
-            $total = Payment::whereMonth('payment_date', $date->month)
-                ->whereYear('payment_date', $date->year)
-                ->sum('amount');
+            // Aseguramos que la comparativa histórica también funcione perfectamente
+            $total = Payment::whereBetween('payment_date', [
+                $date->copy()->startOfMonth()->format('Y-m-d 00:00:00'),
+                $date->copy()->endOfMonth()->format('Y-m-d 23:59:59')
+            ])->sum('amount');
+            
             $data[] = [
                 'name' => $date->translatedFormat('M'),
                 'total' => (int)$total
