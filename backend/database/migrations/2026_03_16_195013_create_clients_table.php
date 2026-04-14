@@ -27,7 +27,7 @@ return new class extends Migration
             $table->integer('profit')->default(0); // GANADO
             
             // Fechas de control (Lógica de negocio)
-            $table->date('payment_date')->nullable(); // Fecha Pago
+            $table->date('payment_date')->nullable(); // Fecha Pago (Agregada para sincronizar con el Dashboard)
             $table->date('due_date')->nullable();         // Fecha Término (Vencimiento)
             
             $table->timestamps();

@@ -15,16 +15,16 @@ class ClientSeeder extends Seeder
     public function run(): void
     {
         Client::create([
-            'name' => 'Juan Carlos Solar',
-            'username' => 'JSOLAR',
-            'password_acc' => 'VIRTUAL123',
-            'screens' => 2,
-            'platform' => 'Duplex',
-            'mac' => '14:87:91:20:47:59',
-            'key' => '16863',
-            'payment_date' => Carbon::parse('2026-05-18'),
-            'due_date' => Carbon::parse('2026-06-18'),
-        ]);
+                'name' => 'Juan Carlos Solar',
+                'username' => 'JSOLAR',
+                'password_acc' => 'VIRTUAL123',
+                'screens' => 2,
+                'platform' => 'Duplex',
+                'mac' => '14:87:91:20:47:59',
+                'key' => '16863',
+                'payment_date' => Carbon::parse('2026-05-18'), // Coincide con la migración
+                'due_date' => Carbon::parse('2026-06-18'),
+            ]);
 
         Client::create([
             'name' => 'Christopher Andaur',

@@ -23,12 +23,11 @@ class ClientController extends Controller
         if ($request->filled('product_id')) {
             $product = Product::find($request->product_id);
             if (!$product || $product->stock <= 0) {
-                return response()->json(['error' => 'No hay stock disponible para ' . ($product->name ?? 'este producto')], 422);
+                return response()->json(['error' => 'No hay stock disponible'], 422);
             }
         }
 
-        // 2. LÓGICA DE FECHAS (Aquí está lo que pediste)
-        // Si no envías payment_date, Carbon::now() usa la fecha de hoy.
+        // 2. LÓGICA DE FECHAS
         $paymentDate = Carbon::parse($request->input('payment_date', Carbon::now()));
         $months = (int)$request->input('months', 1);
 
@@ -38,20 +37,19 @@ class ClientController extends Controller
         $client->due_date = $paymentDate->copy()->addMonths($months);
         $client->save();
 
-        // 4. REGISTRO DEL PAGO (La "Conversación" con el Dashboard)
-        // Creamos el pago asociado al cliente recién creado usando la fecha elegida.
+        // 4. REGISTRO DEL PAGO (Sincronización Corregida)
         Payment::create([
-            'client_id' => $client->id,
+            'client_id'  => $client->id,
             'product_id' => $request->product_id,
-            'amount' => $request->input('amount', 0),
-            'months' => $months,
-            'payment_date' => $paymentDate, // <--- Sincroniza con el Dashboard
+            // AQUÍ ESTÁ EL CAMBIO: Buscamos 'income' que es lo que manda el front
+            'amount'     => $request->input('income', $request->input('amount', 0)), 
+            'months'     => $months,
+            'payment_date' => $paymentDate,
         ]);
 
         // 5. ACTUALIZACIÓN DE STOCK
         if (isset($product)) {
             $product->decrement('stock');
-            if ($product->stock <= 0) $product->update(['status' => 'Agotado']);
         }
 
         return response()->json($client, 201);

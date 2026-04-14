@@ -44,10 +44,10 @@ class DashboardController extends Controller
 
             // En DashboardController.php, busca la parte del gráfico de líneas y cámbiala por esta:
 
+            // En DashboardController.php
             $salesByDay = $payments->groupBy(function($p) {
-                // Usamos parse directo y forzamos el formato día para evitar fallos de zona horaria
                 return (int) Carbon::parse($p->payment_date)->format('j'); 
-            })->map(fn($group) => $group->sum('amount'));
+            })->map(fn($group) => $group->sum('amount')); // Sumará los montos reales ahora que no son 0
 
             $daysInMonth = $startOfMonth->daysInMonth;
             $lineData = [];
