@@ -23,10 +23,3 @@
 ### Requisitos
 * Docker & Docker Desktop.
 * Node.js (v18+).
-
-### Pasos
-
-1. **Clonar el repositorio:**
-   ```bash
-   git clone [https://github.com/FovCruz/VTHome.git](https://github.com/FovCruz/VTHome.git)
-   cd VTHome
