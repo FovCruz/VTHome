@@ -1,6 +1,6 @@
 # VTHome OS - Gestión de Suscripciones
 
-**VTHome OS** es una plataforma integral para la administración y mantenimiento de clientes de servicios de streaming y suscripciones. Diseñada con un enfoque en la agilidad operativa, permite gestionar renovaciones, datos técnicos y estados de cuenta en tiempo real.
+**VTHome OS** es una plataforma integral para la administración y mantenimiento de clientes de servicios de streaming y suscripciones. Diseñada con un enfoque en la agilidad operativa, permite gestionar renovaciones, datos técnicos y estados de cuenta en tiempo real mediante un dashboard que refleja la cantidad de usuarios suscritos, ventas totales, alerta de stock (optimo o bajo), graficos de cantidad de ventas por meses, comparativa, productos mas vendidos y ventas del mes en curso.
 
 ## Stack Tecnológico
 
