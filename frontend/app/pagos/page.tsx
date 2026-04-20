@@ -8,7 +8,7 @@ export default function HistorialPagos() {
 
     const fetchPayments = async () => {
         try {
-            const res = await axios.get('http://localhost/api/payments-history');
+            const res = await axios.get('${process.env.NEXT_PUBLIC_API_URL}/payments-history');
             setPayments(res.data);
             setLoading(false);
         } catch (e) { console.error(e); setLoading(false); }

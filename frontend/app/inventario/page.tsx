@@ -9,7 +9,7 @@ export default function Inventario() {
     const [formData, setFormData] = useState({ id: null, name: '', cost: 0, price: 0, stock: 0, min_stock: 5 })
 
     const fetchProducts = async () => {
-        const res = await axios.get('http://localhost/api/products');
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/products`);
         setProducts(res.data);
     }
 
@@ -99,7 +99,7 @@ export default function Inventario() {
                                     </td>
                                     <td className="p-6 text-center space-x-4">
                                         <button onClick={() => { setFormData(p); setIsModalOpen(true); }} className="text-amber-400 cursor-pointer hover:scale-125 transition-transform">✏️</button>
-                                        <button onClick={async () => { if (confirm('¿Eliminar?')) { await axios.delete(`http://localhost/api/products/${p.id}`); fetchProducts(); } }} className="text-red-500 cursor-pointer hover:scale-125 transition-transform">✕</button>
+                                        <button onClick={async () => { if (confirm('¿Eliminar?')) { await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/products/${p.id}`); fetchProducts(); } }} className="text-red-500 cursor-pointer hover:scale-125 transition-transform">✕</button>
                                     </td>
                                 </tr>
                             ))}
@@ -144,8 +144,8 @@ export default function Inventario() {
 
                             <div className="pt-4 space-y-2">
                                 <button onClick={async () => {
-                                    if (formData.id) await axios.put(`http://localhost/api/products/${formData.id}`, formData);
-                                    else await axios.post('http://localhost/api/products', formData);
+                                    if (formData.id) await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/products/${formData.id}`, formData);
+                                    else await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/products`, formData);
                                     setIsModalOpen(false); fetchProducts();
                                 }} className="w-full bg-blue-600 hover:bg-blue-500 p-4 rounded-2xl font-black uppercase cursor-pointer transition-all shadow-lg shadow-blue-900/40 active:scale-95">
                                     Guardar Cambios

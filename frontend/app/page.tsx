@@ -1,4 +1,6 @@
 'use client'
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { 
@@ -8,7 +10,7 @@ import {
 
 export default function Dashboard() {
   const [data, setData] = useState<any>(null);
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [isLoaded, setIsLoaded] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -17,10 +19,12 @@ export default function Dashboard() {
     setIsLoaded(false);
     setProgress(20);
     try {
-      const [resStats, resClients] = await Promise.all([
-        axios.get(`http://localhost/api/dashboard-stats?month=${selectedMonth}`),
-        axios.get('http://localhost/api/clients')
-      ]);
+
+  const [resStats, resClients] = await Promise.all([
+  axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dashboard-stats?month=${selectedMonth}`),
+  axios.get(`${process.env.NEXT_PUBLIC_API_URL}/clients`)
+  ]);
+
       setProgress(80);
       setData(resStats.data);
       setClients(resClients.data);
@@ -57,8 +61,9 @@ export default function Dashboard() {
   }
 
   // Cálculos seguros
-  const activeCount = clients.filter(c => new Date(c.due_date) > new Date()).length;
-  const inactiveCount = clients.length - activeCount;
+  
+const activeCount = clients.filter((c: any) => new Date(c.due_date) > new Date()).length;  
+const inactiveCount = clients.length - activeCount;
 
   return (
     <div className="p-2 md:p-6 bg-slate-950 min-h-screen text-[#fdc] max-h-screen flex flex-col font-sans overflow-hidden">

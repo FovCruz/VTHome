@@ -12,7 +12,7 @@ export default function ConfigPage() {
   const [massResetOption, setMassResetOption] = useState('clients')
 
   useEffect(() => {
-    axios.get('http://localhost/api/clients').then(res => setClients(res.data))
+    axios.get('${process.env.NEXT_PUBLIC_API_URL}/clients').then(res => setClients(res.data))
   }, [])
 
   // ACCIÓN: Borrado Masivo (Clientes o Inventario)
@@ -26,7 +26,7 @@ export default function ConfigPage() {
         }
       } else if (massResetOption === 'inventory') {
         if (confirm("¿VACIAR INVENTARIO? Se eliminarán todos los productos y los clientes activos quedarán 'Sin Servicio'. Esta acción no se puede deshacer.")) {
-          await axios.post('http://localhost/api/config/reset-inventory');
+          await axios.post('${process.env.NEXT_PUBLIC_API_URL}/config/reset-inventory');
           alert("Inventario vaciado correctamente.");
           window.location.reload();
         }
@@ -40,7 +40,7 @@ export default function ConfigPage() {
   const handleNuclearReset = async () => {
     if (confirmDeleteAll === 'ELIMINAR TODO') {
       try {
-        await axios.post('http://localhost/api/config/nuclear', { confirm_text: confirmDeleteAll });
+        await axios.post('${process.env.NEXT_PUBLIC_API_URL}/config/nuclear', { confirm_text: confirmDeleteAll });
         alert("Sistema formateado con éxito. Todos los datos han sido eliminados.");
         window.location.reload();
       } catch (e) { alert("Error en el proceso."); }
@@ -102,7 +102,7 @@ export default function ConfigPage() {
               onClick={async () => { 
                 if(selectedClientId && confirm("¿Resetear suscripciones de este cliente? El stock del producto actual será devuelto al inventario.")) { 
                   try {
-                    const res = await axios.post(`http://localhost/api/config/reset-client/${selectedClientId}`); 
+                    const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/config/reset-client/${selectedClientId}`); 
                     alert(res.data.message); 
                     window.location.reload(); 
                   } catch (e) {

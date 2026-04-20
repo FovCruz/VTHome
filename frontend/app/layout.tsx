@@ -1,7 +1,8 @@
-/* SIDEBAR LATERAL IZQUIERDO FIJO */
+/* SIDEBAR LATERAL IZQUIERDO FIJO OPTIMIZADO */
 
 import type { Metadata } from "next";
 import "./globals.css";
+import Link from "next/link"; // <--- IMPORTANTE: Importamos Link
 
 export const metadata: Metadata = {
   title: "VTHOME OS",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body className="bg-slate-950 flex min-h-screen font-sans" style={{ color: '#fdc' }}>
+      <body className="bg-slate-950 flex min-h-screen font-sans text-[#fdc]">
         {/* SIDEBAR FIJO */}
         <aside className="w-20 md:w-64 bg-slate-900/50 border-r border-slate-800/50 flex flex-col p-4 md:p-6 sticky top-0 h-screen">
           <div className="flex items-center gap-3 mb-10 px-2">
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
 
           <nav className="flex-1 space-y-2">
+            {/* Usamos NavItem que ahora usa Link */}
             <NavItem icon="📊" label="Dashboard" href="/" />
             <NavItem icon="👥" label="Clientes" href="/clientes" />
             <NavItem icon="💰" label="Historial" href="/pagos" />
@@ -28,10 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </nav>
 
           <div className="pt-4 border-t border-slate-800/50">
-            <div className="flex items-center gap-3 px-2 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
+            <Link href="/login" className="flex items-center gap-3 px-2 opacity-50 hover:opacity-100 transition-opacity cursor-pointer">
               <span>🚪</span>
               <span className="hidden md:block text-xs font-bold uppercase">Salir</span>
-            </div>
+            </Link>
           </div>
         </aside>
 
@@ -44,11 +46,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   );
 }
 
+// Subcomponente NavItem optimizado con Link
 function NavItem({ icon, label, href }: { icon: string, label: string, href: string }) {
   return (
-    <a href={href} className="flex items-center gap-4 p-3 rounded-2xl hover:bg-blue-500/10 hover:text-blue-400 transition-all cursor-pointer group">
+    <Link 
+      href={href} 
+      className="flex items-center gap-4 p-3 rounded-2xl hover:bg-blue-500/10 hover:text-blue-400 transition-all cursor-pointer group"
+    >
       <span className="text-xl group-hover:scale-110 transition-transform">{icon}</span>
       <span className="hidden md:block text-sm font-bold uppercase tracking-widest">{label}</span>
-    </a>
+    </Link>
   );
 }

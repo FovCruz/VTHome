@@ -1,11 +1,13 @@
 'use client'
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import Image from 'next/image'
 
 export default function MantencionClientes() {
-  const [clients, setClients] = useState([])
-  const [products, setProducts] = useState([])
+  const [clients, setClients] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false)
@@ -30,8 +32,8 @@ export default function MantencionClientes() {
   const fetchData = async () => {
     try {
       const [resClients, resProducts] = await Promise.all([
-        axios.get('http://localhost/api/clients'),
-        axios.get('http://localhost/api/products')
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/clients`),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/products`)
       ]);
       setClients(resClients.data);
       setProducts(resProducts.data);
@@ -61,7 +63,7 @@ export default function MantencionClientes() {
 
   const submitRenewal = async () => {
     try {
-      await axios.put(`http://localhost/api/clients/renew/${renewData.id}`, renewData);
+      await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/clients/renew/${renewData.id}`, renewData);
       setIsRenewModalOpen(false);
       fetchData();
       alert("Renovación procesada con éxito.");
@@ -161,7 +163,7 @@ export default function MantencionClientes() {
                         )}
                         <button onClick={() => handleOpenRenew(c)} title="Renovar" className="text-emerald-400 cursor-pointer hover:scale-150 transition-transform text-xl">⚡</button>
                         <button onClick={() => handleEdit(c)} title="Editar" className="text-amber-400 cursor-pointer hover:scale-150 transition-transform text-xl">✏️</button>
-                        <button onClick={async () => { if (confirm("¿Eliminar?")) { await axios.delete(`http://localhost/api/clients/${c.id}`); fetchData(); } }} className="text-red-500 cursor-pointer font-bold hover:scale-150 transition-transform text-xl">✕</button>
+                        <button onClick={async () => { if (confirm("¿Eliminar?")) { await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/clients/${c.id}`); fetchData(); } }} className="text-red-500 cursor-pointer font-bold hover:scale-150 transition-transform text-xl">✕</button>
                       </td>
                     </tr>
                   )
@@ -182,9 +184,9 @@ export default function MantencionClientes() {
               e.preventDefault();
               try {
                 if (formData.id) {
-                  await axios.put(`http://localhost/api/clients/${formData.id}`, formData);
+                  await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/clients/${formData.id}`, formData);
                 } else {
-                  await axios.post('http://localhost/api/clients', formData);
+                  await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/clients`, formData);
                 }
                 setIsModalOpen(false); fetchData();
               } catch (err) { alert("Error al procesar el registro."); }
@@ -224,7 +226,7 @@ export default function MantencionClientes() {
                     className="w-full bg-slate-800/50 p-4 rounded-2xl outline-none border border-emerald-500/20 cursor-pointer"
                     value={formData.product_id || ""}
                     onChange={(e) => {
-                      const p = products.find((prod: any) => prod.id === parseInt(e.target.value));
+                      const p = products.find((prod: any) => prod.id === parseInt(e.target.value)) as any;
                       if (p) setFormData({ ...formData, product_id: p.id, platform: p.name, income: p.price });
                     }}
                   >
